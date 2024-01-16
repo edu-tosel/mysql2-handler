@@ -1,0 +1,30 @@
+{
+  "name": "mysql2-handler",
+  "version": "1.0.0",
+  "description": "Make using mysql simpler with callback function, try...catch, more error objects",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/edu-tosel/mysql2-handler.git"
+  },
+  "keywords": [
+    "mysql2",
+    "mysql",
+    "mariadb",
+    "handler"
+  ],
+  "author": "International TOSEL Committee",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/edu-tosel/mysql2-handler/issues"
+  },
+  "homepage": "https://github.com/edu-tosel/mysql2-handler#readme",
+  "dependencies": {
+    "mysql2": "^3.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.4"
+  }
+}
