@@ -1,9 +1,10 @@
 {
-  "name": "mysql2-handler",
-  "version": "1.0.0",
+  "name": "@edu-tosel/mysql2-handler",
+  "version": "0.1.3",
   "description": "Make using mysql simpler with callback function, try...catch, more error objects",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.build.json --noEmit false",
+    "publish": "npm run build && node setupPackage.js && cd dist && npm publish"
   },
   "repository": {
     "type": "git",
