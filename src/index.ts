@@ -41,7 +41,7 @@ const pool = mysql2.createPool({
 });
 /**
  * @param callback Callback function that use connection.
- * @param option If you want to throw error, use `option.throwError` or leave it blank.
+ * If you want to handle error by yourself with `null`, use `option.throwError`.
  * @throws {PoolError | DbError | Error}
  */
 export async function handler<T>(
@@ -50,8 +50,8 @@ export async function handler<T>(
 ): Promise<T>;
 /**
  * It is safe because of top level `try...catch`.
- * If you want to handle error by yourself, use `option.throwError`.
  * @param callback Callback function that use connection.
+ * @param option If you want to throw error, use `option.throwError` or leave it blank.
  * @throws {never}
  */
 export async function handler<T>(
@@ -92,7 +92,8 @@ export async function handler<T>(
       if (option?.throwError) throw new DbError(e);
       else return null;
     }
-    if (option?.throwError) throw e;
+    const throwError = option?.throwError ?? true;
+    if (throwError) throw e;
     else return null;
   } finally {
     connection.release();
