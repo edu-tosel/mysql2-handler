@@ -46,7 +46,7 @@ const pool = mysql2.createPool({
  */
 export async function handler<T>(
   callback: (connection: mysql2.Connection) => Promise<T>,
-  option: { throwError?: true }
+  option?: { throwError?: true }
 ): Promise<T>;
 /**
  * It is safe because of top level `try...catch`.
@@ -121,3 +121,4 @@ export async function handler<T>(
     }
   }
 }
+handler(async()=>1);
