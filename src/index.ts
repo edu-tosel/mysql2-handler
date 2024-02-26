@@ -121,4 +121,3 @@ export async function handler<T>(
     }
   }
 }
-handler(async()=>1);
