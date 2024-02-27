@@ -1,18 +1,4 @@
-import { RowDataPacket, handler } from ".";
-interface User {
-  id: number;
-  name: string;
-  addr: string;
-  createdAt: Date;
-}
-interface UserRow extends RowDataPacket {
-  id: number;
-  name: string;
-  addr: string;
-  created_at: Date;
-}
-const columns = ["id", "name", "addr", "created_at"] as const;
-const keys = ["id", "name", "addr", "createdAt"] as const;
+import { RowDataPacket } from ".";
 /**
  * Transfer object to row and row to object
  * @typeParam `O` Object type
@@ -44,9 +30,9 @@ const keys = ["id", "name", "addr", "createdAt"] as const;
  */
 export function transfers<
   O extends { [k in K]: R[C] }, // Object type
-  R extends { [c in C]: V }, // RowDataPacket type
-  C extends string = string, // Column string type
-  K extends string = string, // Key string type
+  R extends { [c in C]: V } & RowDataPacket, // RowDataPacket type
+  K extends string | number | symbol = keyof O, // Key string type
+  C extends string | number | symbol = keyof R, // Column string type
   V = any
 >(keys: ReadonlyArray<K>, columns: ReadonlyArray<C>) {
   if (keys.length !== columns.length)

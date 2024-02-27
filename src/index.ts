@@ -1,9 +1,11 @@
 import { DbError, PoolError, isDbError } from "./dbError";
 import mysql2 from "mysql2/promise";
+import { transfers } from "./repository";
 
 export type ResultSetHeader = mysql2.ResultSetHeader;
 export type RowDataPacket = mysql2.RowDataPacket;
 export const format = mysql2.format;
+export { transfers };
 
 const {
   DB_HOST: host,
@@ -128,4 +130,3 @@ export async function handler<T>(
     }
   }
 }
-handler(async (connection) => 1);
