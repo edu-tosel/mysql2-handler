@@ -39,6 +39,13 @@ const pool = mysql2.createPool({
   dateStrings,
   timezone: timezone ?? "Z",
 });
+
+type HandlerOption = {
+  throwError?: boolean;
+  // removeUndefinedInFormatting?: boolean;
+  printSqlError?: boolean;
+  rollbackIfError?: boolean;
+};
 /**
  * @param callback Callback function that use connection.
  * If you want to handle error by yourself with `null`, use `option.throwError`.
@@ -46,7 +53,7 @@ const pool = mysql2.createPool({
  */
 export async function handler<T>(
   callback: (connection: mysql2.Connection) => Promise<T>,
-  option?: { throwError?: true }
+  option?: { throwError?: true } & HandlerOption
 ): Promise<T>;
 /**
  * It is safe because of top level `try...catch`.
@@ -56,18 +63,18 @@ export async function handler<T>(
  */
 export async function handler<T>(
   callback: (connection: mysql2.Connection) => Promise<T>,
-  option?: { throwError: false }
+  option?: { throwError: false } & HandlerOption
 ): Promise<T | null>;
+/**
+ * @param callback Callback function that use connection.
+ * @param option If you want to handle error by yourself with `null`, use `option.throwError`.
+ * @throws {PoolError | DbError | Error}
+ */
 export async function handler<T>(
   callback: (connection: mysql2.Connection) => Promise<T>,
-  option: {
-    throwError?: boolean;
-    removeUndefinedInFormatting?: boolean;
-    printSqlError?: boolean;
-    rollbackIfError?: boolean;
-  } = {
+  option: HandlerOption = {
     throwError: true,
-    removeUndefinedInFormatting: true,
+    // removeUndefinedInFormatting: true,
     printSqlError: true,
     rollbackIfError: true,
   }
@@ -80,7 +87,7 @@ export async function handler<T>(
     await connection.commit();
     return response;
   } catch (e) {
-    await connection.rollback();
+    if (option?.rollbackIfError) await connection.rollback();
     if (isDbError(e)) {
       if (option?.printSqlError) {
         console.error(e.sql);
@@ -121,3 +128,4 @@ export async function handler<T>(
     }
   }
 }
+handler(async (connection) => 1);
