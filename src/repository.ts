@@ -30,7 +30,7 @@ import { RowDataPacket } from ".";
  */
 export function transfers<
   O extends { [k in K]: R[C] }, // Object type
-  R extends { [c in C]: V } & RowDataPacket, // RowDataPacket type
+  R extends { [c in C]: V }, // RowDataPacket type
   K extends string | number | symbol = keyof O, // Key string type
   C extends string | number | symbol = keyof R, // Column string type
   V = any
