@@ -30,7 +30,7 @@ const dateStrings: (typeof availableDateStrings)[number][] = dateStringsString
   : ["DATE"];
 const debug = debugString ? debugString === "true" : false;
 const connectionLimit = parseInt(connectionLimitString || "5");
-const pool = mysql2.createPool({
+const poolOption = {
   host,
   user,
   password,
@@ -40,7 +40,8 @@ const pool = mysql2.createPool({
   connectionLimit,
   dateStrings,
   timezone: timezone ?? "Z",
-});
+};
+const pool = mysql2.createPool(poolOption);
 
 type HandlerOption = {
   throwError?: boolean;
@@ -124,6 +125,7 @@ export async function handler<T>(
       return poolConnection;
     } catch (e) {
       console.error("Connection does not created.");
+      console.error(poolOption);
       if (option?.throwError)
         throw new PoolError("Connection does not created.");
       else return null;
