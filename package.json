@@ -26,6 +26,7 @@
     "mysql2": "^3.7.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.4"
+    "@types/node": "^20.11.4",
+    "dotenv": "^16.4.5"
   }
 }
