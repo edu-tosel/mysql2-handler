@@ -1,4 +1,4 @@
-import { RowDataPacket } from ".";
+import { ResultSetHeader, RowDataPacket, format, handler } from ".";
 /**
  * Transfer object to row and row to object
  * @typeParam `O` Object type
@@ -40,9 +40,9 @@ export function transfers<
   const toObject = (row: R) => {
     const obj = {} as O;
     for (let i = 0; i < columns.length; i++) {
+      const key = keys[i];
       const column = columns[i];
       const value = row[column];
-      const key = keys[i];
       obj[key] = value as unknown as O[K];
     }
     return obj;
@@ -69,4 +69,163 @@ export function transfers<
     return row;
   };
   return { toObject, toRow, toPartialRow };
+}
+/**
+ * Create CRUD functions and handler and transfer functions
+ * @param keys Object keys
+ * @param columns RowDataPacket columns
+ * @param option.table Table name
+ * @param option.autoSetKeys Auto set key string type default `["id", "createdAt", "updatedAt"]`
+ * @param option.printQuery Print query
+ * @returns CRUD functions and handler and transfer functions
+ * @example
+ * ``` ts
+ * interface User {
+ *   id: number;
+ *   name: string;
+ *   addr: string;
+ *   createdAt: Date;
+ * }
+ * interface UserRow extends RowDataPacket {
+ *   id: number;
+ *   name: string;
+ *   addr: string;
+ *   created_at: Date;
+ * }
+ * const columns = ["id", "name", "addr", "created_at"] as const;
+ * const keys = ["id", "name", "addr", "createdAt"] as const;
+ * const { _delete, find, save, update } = crudPackage<User, UserRow>(
+ *   keys,
+ *   columns,
+ *   { table: "user", autoSetColumns: ["created_at"] }
+ * );
+ * ```
+ */
+export function crudPackage<
+  O extends { [k in K]: R[C] }, // Object type
+  R extends { [c in C]: V }, // RowDataPacket type
+  K extends string | number | symbol = keyof O, // Key string type
+  C extends string | number | symbol = keyof R, // Column string type
+  AS extends K = K, // Auto set key string type
+  V extends R[C] = any // Value type
+>(
+  keys: ReadonlyArray<K>,
+  columns: ReadonlyArray<C>,
+  option: { autoSetKeys?: Array<AS>; table: string; printQuery?: boolean }
+) {
+  option.autoSetKeys =
+    option.autoSetKeys || (["id", "createdAt", "updatedAt"] as unknown as AS[]);
+  const printQuery = option.printQuery || false;
+  const { toObject, toPartialRow, toRow } = transfers<O, R, K, C>(
+    keys,
+    columns
+  );
+  type CompareValue<T = unknown> =
+    | NonNullable<T>
+    | NonNullable<T>[]
+    | "null"
+    | "not null"
+    | `%${string}%`
+    | `%${string}`
+    | `${string}%`;
+  type Query = { [k in K]?: CompareValue };
+  type Setter = {
+    [k in Exclude<K, AS>]: O[k];
+  };
+  const queryString = {
+    selectAll: format("SELECT ?? FROM ??;", [columns, option.table]),
+    selectQuery: format("SELECT ?? FROM ?? WHERE ", [columns, option.table]),
+    insert: format("INSERT INTO ?? SET ?;", [option.table]),
+    update: format("UPDATE ?? SET ? WHERE ", [option.table]),
+    delete: format("DELETE FROM ?? WHERE ", [option.table]),
+  };
+  /**
+   * Find rows
+   * @example
+   * ``` ts
+   * const userFirstAndSecond = await find({id: [1, 2]});
+   * const userOfSeoul = await find({addr1: "%서울%"});
+   * const userOfAddressNull = await find({addr1: "null"});
+   * const userOfAddressNotNull = await find({addr1: "not null"});
+   * ```
+   * @param query Query object
+   */
+  const find = async (query?: Query) =>
+    handler(async (connection) => {
+      if (!query || Object.keys(query).length === 0) {
+        const [rows] = await connection.query<(R & RowDataPacket)[]>(
+          queryString.selectAll
+        );
+        return rows.map(toObject);
+      }
+      const condition = getCondition(query);
+      const [rows] = await connection.query<(R & RowDataPacket)[]>(
+        queryString.selectQuery + condition
+      );
+      if (printQuery)
+        console.log(connection.format(queryString.selectQuery + condition));
+      return rows.map(toObject);
+    });
+  const save = async (setterObj: Setter) =>
+    handler(async (connection) => {
+      const row = toPartialRow(setterObj as Partial<O>);
+      const [result] = await connection.execute<ResultSetHeader>(
+        queryString.insert,
+        [row]
+      );
+      return result;
+    });
+  const update = async (setterObj: Setter, query: Query) =>
+    handler(async (connection) => {
+      const row = toPartialRow(setterObj as Partial<O>);
+      const [result] = await connection.execute<ResultSetHeader>(
+        queryString.update,
+        [row, query]
+      );
+      if (printQuery)
+        console.log(connection.format(queryString.update, [setterObj, query]));
+      return result;
+    });
+  const _delete = async (query: Query) =>
+    handler(async (connection) => {
+      const condition = getCondition(query);
+      const [result] = await connection.execute<ResultSetHeader>(
+        queryString.delete + condition
+      );
+      if (printQuery)
+        console.log(connection.format(queryString.delete, [query]));
+      return result;
+    });
+  function getCondition(query: Query) {
+    if (!query || Object.keys(query).length === 0)
+      throw new Error("query is empty"); // If raised, it's a bug
+    const queryKeys = Object.keys(query) as K[];
+    const queryIndices = queryKeys.map((key) => keys.indexOf(key));
+    const queryColumns = queryIndices.map((index) => columns[index]);
+
+    const condition = queryColumns
+      .map((queryColumn, index) => {
+        const value = query[queryKeys[index]];
+        if (value === "null") return format("?? IS NULL", [queryColumn]);
+        else if (value === "not null")
+          return format("?? IS NOT NULL", [queryColumn]);
+        else if (Array.isArray(value))
+          return format("?? IN (?)", [queryColumn, value]);
+        else if (typeof value === "string" && value.includes("%"))
+          return format("?? LIKE ?", [queryColumn, value]);
+        else return format("?? = ?", [queryColumn, value]);
+      })
+      .join(" AND ");
+    return condition + ";";
+  }
+  return {
+    find,
+    save,
+    update,
+    _delete,
+    handler,
+    toObject,
+    toRow,
+    toPartialRow,
+  };
 }
