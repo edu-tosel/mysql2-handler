@@ -93,11 +93,11 @@ export async function handler<T>(
     if (option?.rollbackIfError) await connection.rollback();
     if (isDbError(e)) {
       if (option?.printSqlError) {
-        console.error(e.sql);
-        console.error(e.sqlMessage);
-        console.error(e.sqlState);
-        console.error(e.errno);
-        console.error(e.code);
+        console.error("sql: ", e.sql);
+        console.error("sqlMessage: ",e.sqlMessage);
+        console.error("sqlState: ",e.sqlState);
+        console.error("errno: ",e.errno);
+        console.error("code: ",e.code);
       }
       if (option?.throwError) throw new DbError(e);
       else return null;
