@@ -71,11 +71,13 @@ export function transfers<
   return { toObject, toRow, toPartialRow };
 }
 /**
- * Create CRUD functions and handler and transfer functions
+ * Create CRUD functions and handler and transfer functions.
+ * @typeParam `O` Object type
+ * @typeParam `R` RowDataPacket type
+ * @typeParam `AS` Auto set key string type like 'id' or 'createdAt' or 'updatedAt' you can't set this key when you update or save
  * @param keys Object keys
  * @param columns RowDataPacket columns
  * @param option.table Table name
- * @param option.autoSetKeys Auto set key string type default `["id", "createdAt", "updatedAt"]`
  * @param option.printQuery Print query
  * @returns CRUD functions and handler and transfer functions
  * @example
@@ -94,27 +96,31 @@ export function transfers<
  * }
  * const columns = ["id", "name", "addr", "created_at"] as const;
  * const keys = ["id", "name", "addr", "createdAt"] as const;
- * const { _delete, find, save, update } = crudPackage<User, UserRow>(
+ * const { _delete, find, save, update } = crudPackage<User, UserRow, "id" | "createdAt">(
  *   keys,
  *   columns,
- *   { table: "user", autoSetColumns: ["created_at"] }
+ *   { table: "user" }
  * );
  * ```
  */
 export function crudPackage<
   O extends { [k in K]: R[C] }, // Object type
-  R extends { [c in C]: V }, // RowDataPacket type
+  R extends { [c in C]: unknown }, // RowDataPacket type
+  AS extends keyof O, // Auto set key string type
   K extends string | number | symbol = keyof O, // Key string type
-  C extends string | number | symbol = keyof R, // Column string type
-  AS extends K = K, // Auto set key string type
-  V extends R[C] = any // Value type
+  C extends string | number | symbol = keyof R // Column string type
 >(
   keys: ReadonlyArray<K>,
   columns: ReadonlyArray<C>,
-  option: { autoSetKeys?: Array<AS>; table: string; printQuery?: boolean }
+  option: {
+    table: string;
+    /**
+     * @deprecated Use typeParam AS
+     */
+    autoSetKeys?: any[];
+    printQuery?: boolean;
+  }
 ) {
-  option.autoSetKeys =
-    option.autoSetKeys || (["id", "createdAt", "updatedAt"] as unknown as AS[]);
   const printQuery = option.printQuery || false;
   const { toObject, toPartialRow, toRow } = transfers<O, R, K, C>(
     keys,
