@@ -138,10 +138,10 @@ export function crudPackage<
   type Setter = Omit<O, AS>;
   const queryString = {
     selectAll: format("SELECT ?? FROM ??;", [columns, option.table]),
-    selectQuery: format("SELECT ?? FROM ?? WHERE ", [columns, option.table]),
+    selectQuery: format("SELECT ?? FROM ?? WHERE ?;", [columns, option.table]),
     insert: format("INSERT INTO ?? SET ?;", [option.table]),
-    update: format("UPDATE ?? SET ? WHERE ", [option.table]),
-    delete: format("DELETE FROM ?? WHERE ", [option.table]),
+    update: format("UPDATE ?? SET ? WHERE ?;", [option.table]),
+    delete: format("DELETE FROM ?? WHERE ?;", [option.table]),
   };
   /**
    * Find rows
