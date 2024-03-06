@@ -138,10 +138,10 @@ export function crudPackage<
   type Setter = Omit<O, AS>;
   const queryString = {
     selectAll: format("SELECT ?? FROM ??;", [columns, option.table]),
-    selectQuery: format("SELECT ?? FROM ?? WHERE ?;", [columns, option.table]),
+    selectQuery: format("SELECT ?? FROM ?? WHERE ", [columns, option.table]),
     insert: format("INSERT INTO ?? SET ?;", [option.table]),
-    update: format("UPDATE ?? SET ? WHERE ?;", [option.table]),
-    delete: format("DELETE FROM ?? WHERE ?;", [option.table]),
+    update: format("UPDATE ?? SET ? WHERE ", [option.table]),
+    delete: format("DELETE FROM ?? WHERE ", [option.table]),
   };
   /**
    * Find rows
@@ -182,9 +182,10 @@ export function crudPackage<
   const update = async (setterObj: Setter, query: Query) =>
     handler(async (connection) => {
       const row = toPartialRow(setterObj as Partial<O>);
+      const condition = getCondition(query);
       const [result] = await connection.query<ResultSetHeader>(
-        queryString.update,
-        [row, query]
+        queryString.update + condition,
+        [row]
       );
       if (printQuery)
         console.log(connection.format(queryString.update, [setterObj, query]));
