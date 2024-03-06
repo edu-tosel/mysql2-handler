@@ -179,7 +179,7 @@ export function crudPackage<
       );
       return result;
     });
-  const update = async (setterObj: Setter, query: Query) =>
+  const update = async (setterObj: Partial<Setter>, query: Query) =>
     handler(async (connection) => {
       const row = toPartialRow(setterObj as Partial<O>);
       const condition = getCondition(query);
