@@ -173,7 +173,7 @@ export function crudPackage<
   const save = async (setterObj: Setter) =>
     handler(async (connection) => {
       const row = toPartialRow(setterObj as Partial<O>);
-      const [result] = await connection.execute<ResultSetHeader>(
+      const [result] = await connection.query<ResultSetHeader>(
         queryString.insert,
         [row]
       );
@@ -182,7 +182,7 @@ export function crudPackage<
   const update = async (setterObj: Setter, query: Query) =>
     handler(async (connection) => {
       const row = toPartialRow(setterObj as Partial<O>);
-      const [result] = await connection.execute<ResultSetHeader>(
+      const [result] = await connection.query<ResultSetHeader>(
         queryString.update,
         [row, query]
       );
@@ -193,7 +193,7 @@ export function crudPackage<
   const _delete = async (query: Query) =>
     handler(async (connection) => {
       const condition = getCondition(query);
-      const [result] = await connection.execute<ResultSetHeader>(
+      const [result] = await connection.query<ResultSetHeader>(
         queryString.delete + condition
       );
       if (printQuery)
