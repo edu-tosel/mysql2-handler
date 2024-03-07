@@ -134,7 +134,9 @@ export function crudPackage<
     | `%${string}%`
     | `%${string}`
     | `${string}%`;
-  type Query = { [k in K]?: CompareValue };
+  type Query = {
+    [k in K]?: CompareValue<O[k]>;
+  };
   type Setter = Omit<O, AS>;
   const queryString = {
     selectAll: format("SELECT ?? FROM ??;", [columns, option.table]),
@@ -177,6 +179,7 @@ export function crudPackage<
         queryString.insert,
         [row]
       );
+      if (printQuery) console.log(connection.format(queryString.insert, [row]));
       return result;
     });
   const update = async (setterObj: Partial<Setter>, query: Query) =>
@@ -188,7 +191,7 @@ export function crudPackage<
         [row]
       );
       if (printQuery)
-        console.log(connection.format(queryString.update, [setterObj, query]));
+        console.log(connection.format(queryString.update + condition, [row]));
       return result;
     });
   const _delete = async (query: Query) =>
@@ -198,7 +201,9 @@ export function crudPackage<
         queryString.delete + condition
       );
       if (printQuery)
-        console.log(connection.format(queryString.delete, [query]));
+        console.log(
+          connection.query<ResultSetHeader>(queryString.delete + condition)
+        );
       return result;
     });
   function getCondition(query: Query) {
