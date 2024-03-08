@@ -119,13 +119,16 @@ export function crudPackage<
      */
     autoSetKeys?: any[];
     printQuery?: boolean;
+    transfers?: {
+      toObject: (row: R) => O;
+      toRow: (obj: O) => R;
+      toPartialRow: (obj: Partial<O>) => Partial<R>;
+    };
   }
 ) {
   const printQuery = option.printQuery || false;
-  const { toObject, toPartialRow, toRow } = transfers<O, R, K, C>(
-    keys,
-    columns
-  );
+  const { toObject, toPartialRow, toRow } =
+    option.transfers || transfers<O, R, K, C>(keys, columns);
   type CompareValue<T = unknown> =
     | NonNullable<T>
     | NonNullable<T>[]
