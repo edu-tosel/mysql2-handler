@@ -219,15 +219,17 @@ export function crudPackage<
     const condition = queryColumns
       .map((queryColumn, index) => {
         const value = query[queryKeys[index]];
-        if (value === "null") return format("?? IS NULL", [queryColumn]);
-        else if (value === "not null")
+        if (Array.isArray(value)) {
+          if (value.length === 0) return null;
+          else return format("?? IN (?)", [queryColumn, value]);
+        } else if (value === "not null")
           return format("?? IS NOT NULL", [queryColumn]);
-        else if (Array.isArray(value))
-          return format("?? IN (?)", [queryColumn, value]);
+        else if (value === "null") return format("?? IS NULL", [queryColumn]);
         else if (typeof value === "string" && value.includes("%"))
           return format("?? LIKE ?", [queryColumn, value]);
         else return format("?? = ?", [queryColumn, value]);
       })
+      .filter((v) => v !== null)
       .join(" AND ");
     return condition + ";";
   }
