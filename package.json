@@ -4,7 +4,7 @@
   "description": "Make using mysql simpler with callback function, try...catch, more error objects",
   "scripts": {
     "build": "tsc -p tsconfig.build.json --noEmit false",
-    "publish": "npm run build && node setupPackage.js && cd dist && npm publish"
+    "publish": "rm -r dist && npm run build && node setupPackage.js && cd dist && npm publish"
   },
   "repository": {
     "type": "git",
