@@ -39,7 +39,7 @@ export function isDbError(
   error: unknown,
   strict?: boolean
 ): error is DbErrorInterface {
-  if (!strict) return true;
+  if (typeof strict !== "undefined" && !strict) return true;
   return (
     typeof error === "object" &&
     error !== null &&
