@@ -137,7 +137,7 @@ export function crudPackage<
   type Query = {
     [k in K]?: CompareValue<O[k]>;
   };
-  type Setter = Omit<O, AS> & { [k in AS]: never };
+  type Setter = Omit<O, AS>;
   const queryString = {
     selectAll: format("SELECT ?? FROM ??;", [columns, table]),
     selectQuery: format("SELECT ?? FROM ?? WHERE ", [columns, table]),
