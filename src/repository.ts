@@ -123,6 +123,7 @@ export function crudPackage<
   }
 ) {
   const printQuery = option.printQuery || false;
+  const table = option.table;
   const { toObject, toPartialRow, toRow } =
     option.transfers || transfers<O, R, K, C>(keys, columns);
   type CompareValue<T = unknown> =
@@ -136,16 +137,16 @@ export function crudPackage<
   type Query = {
     [k in K]?: CompareValue<O[k]>;
   };
-  type Setter = Omit<O, AS>;
+  type Setter = Omit<O, AS> & { [k in AS]: never };
   const queryString = {
-    selectAll: format("SELECT ?? FROM ??;", [columns, option.table]),
-    selectQuery: format("SELECT ?? FROM ?? WHERE ", [columns, option.table]),
-    insert: format("INSERT INTO ?? SET ?;", [option.table]),
-    insertMany: format("INSERT INTO ?? (??) VALUES ?", [option.table, columns]),
-    update: format("UPDATE ?? SET ? WHERE ", [option.table]),
-    updateAll: format("UPDATE ?? SET ?;", [option.table]),
-    delete: format("DELETE FROM ?? WHERE ", [option.table]),
-    deleteAll: format("DELETE FROM ??;", [option.table]),
+    selectAll: format("SELECT ?? FROM ??;", [columns, table]),
+    selectQuery: format("SELECT ?? FROM ?? WHERE ", [columns, table]),
+    insert: format("INSERT INTO ?? (??) VALUE ?;", [table, columns]),
+    insertMany: format("INSERT INTO ?? (??) VALUES ?", [table, columns]),
+    update: format("UPDATE ?? SET ? WHERE ", [table]),
+    updateAll: format("UPDATE ?? SET ?;", [table]),
+    delete: format("DELETE FROM ?? WHERE ", [table]),
+    deleteAll: format("DELETE FROM ??;", [table]),
   };
 
   function printQueryIfNeeded(query: string) {
@@ -188,13 +189,17 @@ export function crudPackage<
    */
   const save = async (setterObj: Setter) =>
     handler(async (connection) => {
-      const row = toPartialRow(setterObj as Partial<O>);
+      const value = keys.map((key) => {
+        if (key in setterObj)
+          return setterObj[key as unknown as keyof typeof setterObj];
+        else return undefined;
+      });
       const [result] = await connection.query<ResultSetHeader>(
         queryString.insert,
-        [row]
+        [[value]]
       );
 
-      printQueryIfNeeded(connection.format(queryString.insert, [row]));
+      printQueryIfNeeded(connection.format(queryString.insert, [[value]]));
       return result;
     });
 
