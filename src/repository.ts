@@ -114,10 +114,6 @@ export function crudPackage<
   columns: ReadonlyArray<C>,
   option: {
     table: string;
-    /**
-     * @deprecated Use typeParam AS
-     */
-    autoSetKeys?: any[];
     printQuery?: boolean;
     transfers?: {
       toObject: (row: R) => O;
@@ -145,9 +141,17 @@ export function crudPackage<
     selectAll: format("SELECT ?? FROM ??;", [columns, option.table]),
     selectQuery: format("SELECT ?? FROM ?? WHERE ", [columns, option.table]),
     insert: format("INSERT INTO ?? SET ?;", [option.table]),
+    insertMany: format("INSERT INTO ?? (??) VALUES ?", [option.table, columns]),
     update: format("UPDATE ?? SET ? WHERE ", [option.table]),
+    updateAll: format("UPDATE ?? SET ?;", [option.table]),
     delete: format("DELETE FROM ?? WHERE ", [option.table]),
+    deleteAll: format("DELETE FROM ??;", [option.table]),
   };
+
+  function printQueryIfNeeded(query: string) {
+    if (printQuery) return console.log(query);
+    else return;
+  }
   /**
    * Find rows
    * @example
@@ -171,10 +175,17 @@ export function crudPackage<
       const [rows] = await connection.query<(R & RowDataPacket)[]>(
         queryString.selectQuery + condition
       );
-      if (printQuery)
-        console.log(connection.format(queryString.selectQuery + condition));
+      printQueryIfNeeded(
+        connection.format(queryString.selectQuery + condition)
+      );
       return rows.map(toObject);
     });
+  /**
+   * Saves the provided setter object to the database.
+   *
+   * @param setterObj - The setter object containing the data to be saved.
+   * @returns A promise that resolves to the result of the save operation.
+   */
   const save = async (setterObj: Setter) =>
     handler(async (connection) => {
       const row = toPartialRow(setterObj as Partial<O>);
@@ -182,32 +193,76 @@ export function crudPackage<
         queryString.insert,
         [row]
       );
-      if (printQuery) console.log(connection.format(queryString.insert, [row]));
+
+      printQueryIfNeeded(connection.format(queryString.insert, [row]));
       return result;
     });
-  const update = async (setterObj: Partial<Setter>, query: Query) =>
+
+  /**
+   * Updates rows in the database based on the provided setter object and query.
+   *
+   * @param setterObj - The partial object containing the values to be updated.
+   * @param query - The query object specifying the conditions for the update.
+   * @param option - Optional configuration for the update operation.
+   * @param option.allowAffectAll - If set to true, allows updating all rows when the setter object is empty.
+   *
+   * @returns A promise that resolves to the result of the update operation.
+   *
+   * @throws An error if the setterObj is empty and option.allowAffectAll is not set to true.
+   */
+  const update = async (
+    setterObj: Partial<Setter>,
+    query: Query,
+    option?: { allowAffectAll?: boolean }
+  ) =>
     handler(async (connection) => {
       const row = toPartialRow(setterObj as Partial<O>);
-      const condition = getCondition(query);
-      const [result] = await connection.query<ResultSetHeader>(
-        queryString.update + condition,
-        [row]
-      );
-      if (printQuery)
-        console.log(connection.format(queryString.update + condition, [row]));
-      return result;
+      if (Object.keys(row).length === 0) {
+        if (option?.allowAffectAll) {
+          const [result] = await connection.query<ResultSetHeader>(
+            queryString.updateAll
+          );
+          printQueryIfNeeded(queryString.updateAll);
+          return result;
+        } else throw new Error("setterObj is empty");
+      } else {
+        const condition = getCondition(query);
+        const [result] = await connection.query<ResultSetHeader>(
+          queryString.update + condition,
+          [row]
+        );
+        printQueryIfNeeded(
+          connection.format(queryString.update + condition, [row])
+        );
+        return result;
+      }
     });
-  const _delete = async (query: Query) =>
+  /**
+   * Deletes records from the database based on the provided query.
+   * @param query - The query object specifying the records to delete.
+   * @param option - An optional object with additional options.
+   * @param option.allowAffectAll - If set to true, allows deleting all records when the query is empty.
+   * @returns A promise that resolves to the number of affected rows.
+   * @throws An error if the query is empty and `option.allowAffectAll` is not set to true.
+   */
+  const _delete = async (query: Query, option?: { allowAffectAll?: boolean }) =>
     handler(async (connection) => {
       const condition = getCondition(query);
-      const [result] = await connection.query<ResultSetHeader>(
-        queryString.delete + condition
-      );
-      if (printQuery)
-        console.log(
-          connection.query<ResultSetHeader>(queryString.delete + condition)
+      if (Object.keys(query).length === 0) {
+        if (option?.allowAffectAll) {
+          const [result] = await connection.query<ResultSetHeader>(
+            queryString.deleteAll
+          );
+          printQueryIfNeeded(queryString.deleteAll);
+          return result;
+        } else throw new Error("query is empty");
+      } else {
+        const [result] = await connection.query<ResultSetHeader>(
+          queryString.delete + condition
         );
-      return result;
+        printQueryIfNeeded(connection.format(queryString.delete + condition));
+        return result;
+      }
     });
   function getCondition(query: Query) {
     if (!query || Object.keys(query).length === 0)
