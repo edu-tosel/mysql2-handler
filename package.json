@@ -1,11 +1,11 @@
 {
   "name": "@edu-tosel/mysql2-handler",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "Make using mysql simpler with callback function, try...catch, more error objects",
   "scripts": {
     "build": "tsc -p tsconfig.build.json --noEmit false",
     "build-publish": "npm run build && node setupPackage.js && cd dist && npm publish",
-    "test":"ts-node src/test.ts"
+    "test": "ts-node src/test.ts"
   },
   "repository": {
     "type": "git",
