@@ -1,4 +1,5 @@
 import { ResultSetHeader, RowDataPacket, format, handler } from ".";
+import { removeUndefined } from "./utils";
 /**
  * Transfer object to row and row to object
  * @typeParam `O` Object type
@@ -166,6 +167,7 @@ export function crudPackage<
    */
   const find = async (query?: Query) =>
     handler(async (connection) => {
+      query = removeUndefined(query);
       if (!query || Object.keys(query).length === 0) {
         const [rows] = await connection.query<(R & RowDataPacket)[]>(
           queryString.selectAll
@@ -189,6 +191,7 @@ export function crudPackage<
    */
   const save = async (setterObj: Setter) =>
     handler(async (connection) => {
+      setterObj = removeUndefined(setterObj);
       const value = keys.map((key) => {
         if (key in setterObj)
           return setterObj[key as unknown as keyof typeof setterObj];
@@ -221,6 +224,8 @@ export function crudPackage<
     option?: { allowAffectAll?: boolean }
   ) =>
     handler(async (connection) => {
+      setterObj = removeUndefined(setterObj);
+      query = removeUndefined(query);
       const row = toPartialRow(setterObj as Partial<O>);
       if (Object.keys(row).length === 0) {
         if (option?.allowAffectAll) {
@@ -252,6 +257,7 @@ export function crudPackage<
    */
   const _delete = async (query: Query, option?: { allowAffectAll?: boolean }) =>
     handler(async (connection) => {
+      query = removeUndefined(query);
       const condition = getCondition(query);
       if (Object.keys(query).length === 0) {
         if (option?.allowAffectAll) {
