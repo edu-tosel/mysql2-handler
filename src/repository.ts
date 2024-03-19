@@ -280,7 +280,7 @@ export function crudPackage<
       .map((queryColumn, index) => {
         const value = query[queryKeys[index]];
         if (Array.isArray(value)) {
-          if (value.length === 0) return null;
+          if (value.length === 0) return "FALSE";
           else return format("?? IN (?)", [queryColumn, value]);
         } else if (value === "not null")
           return format("?? IS NOT NULL", [queryColumn]);
@@ -289,7 +289,6 @@ export function crudPackage<
           return format("?? LIKE ?", [queryColumn, value]);
         else return format("?? = ?", [queryColumn, value]);
       })
-      .filter((v) => v !== null)
       .join(" AND ");
     return condition + ";";
   }
