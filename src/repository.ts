@@ -107,9 +107,9 @@ export function transfers<
 export function crudPackage<
   O extends { [k in K]: R[C] }, // Object type
   R extends { [c in C]: unknown }, // RowDataPacket type
-  AS extends keyof O = never, // Auto set key string type
-  K extends string | number | symbol = keyof O, // Key string type
-  C extends string | number | symbol = keyof R // Column string type
+  AS extends string = never, // Auto set key string type
+  K extends string = keyof O & string, // Key string type
+  C extends string = keyof R & string // Column string type
 >(
   keys: ReadonlyArray<K>,
   columns: ReadonlyArray<C>,
@@ -121,6 +121,7 @@ export function crudPackage<
       toRow: (obj: O) => R;
       toPartialRow: (obj: Partial<O>) => Partial<R>;
     };
+    autoSetColumns?: AS[];
   }
 ) {
   const printQuery = option.printQuery || false;
@@ -183,6 +184,7 @@ export function crudPackage<
       );
       return rows.map(toObject);
     });
+  const findOne = async (query: Query) => (await find(query)).at(0) ?? null;
   /**
    * Saves the provided setter object to the database.
    *
@@ -300,6 +302,7 @@ export function crudPackage<
   }
   return {
     find,
+    findOne,
     save,
     update,
     _delete,
