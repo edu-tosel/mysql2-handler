@@ -124,7 +124,8 @@ export function crudPackage<
     autoSetColumns?: AS[];
   }
 ) {
-  const printQuery = option.printQuery || false;
+  const printQuery =
+    option.printQuery || process.env.NODE_ENV === "development";
   const table = option.table;
   const { toObject, toPartialRow, toRow } =
     option.transfers || transfers<O, R, K, C>(keys, columns);
