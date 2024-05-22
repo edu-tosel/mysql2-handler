@@ -324,6 +324,7 @@ export function crudPackage<
     save,
     update,
     _delete,
+    delete: _delete,
     handler,
     toObject,
     toRow,
