@@ -185,7 +185,24 @@ export function crudPackage<
       );
       return rows.map(toObject);
     });
-  const findOne = async (query: Query) => (await find(query)).at(0) ?? null;
+  const findOne: {
+    (query: Query, { throwError }: { throwError: true }): Promise<O>;
+    (query: Query, { throwError }: { throwError?: false }): Promise<
+      O | undefined
+    >;
+    (query: Query, { throwError }?: { throwError?: false }): Promise<
+      O | undefined
+    >;
+  } = async (
+    query: Query,
+    { throwError }: { throwError?: boolean } = {}
+  ): Promise<any> => {
+    const rows = await find(query);
+    if (rows.length === 0 && throwError) throw new Error("Not Found");
+    else if (rows.length > 1 && throwError) throw new Error("Multiple Found");
+    else if (!throwError) return rows.at(0);
+    else return rows[0];
+  };
   /**
    * Saves the provided setter object to the database.
    *
