@@ -190,7 +190,7 @@ export function crudPackage<
     (query: Query, { throwError }: { throwError?: false }): Promise<
       O | undefined
     >;
-    (query: Query, { throwError }?: { throwError?: false }): Promise<
+    (query: Query, { throwError }?: { throwError?: boolean }): Promise<
       O | undefined
     >;
   } = async (
