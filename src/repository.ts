@@ -331,3 +331,25 @@ export function crudPackage<
     toPartialRow,
   };
 }
+const identityFunction = <T>(value: T) => value;
+export const tablePackage = <
+  T extends RowDataPacket,
+  C extends string = keyof T & string
+>({
+  columns,
+  printQuery,
+  tableName,
+}: {
+  tableName: string;
+  columns: ReadonlyArray<C> | C[];
+  printQuery?: boolean;
+}) =>
+  crudPackage<T, T>(columns, columns, {
+    table: tableName,
+    printQuery,
+    transfers: {
+      toObject: identityFunction,
+      toRow: identityFunction,
+      toPartialRow: identityFunction,
+    },
+  });
