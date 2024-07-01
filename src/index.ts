@@ -48,6 +48,7 @@ type HandlerOption = {
   // removeUndefinedInFormatting?: boolean;
   printSqlError?: boolean;
   rollbackIfError?: boolean;
+  useTransaction?: boolean;
 };
 /**
  * @param callback Callback function that use connection.
@@ -80,24 +81,26 @@ export async function handler<T>(
     // removeUndefinedInFormatting: true,
     printSqlError: true,
     rollbackIfError: true,
+    useTransaction: true,
   }
 ) {
   const connection = await getConnection();
   if (connection === null) return null;
-  await connection.beginTransaction();
+  if (option.useTransaction) await connection.beginTransaction();
   try {
     const response = await callback(connection);
-    await connection.commit();
+    if (option.useTransaction) await connection.commit();
     return response;
   } catch (e) {
-    if (option?.rollbackIfError) await connection.rollback();
+    if (option.useTransaction && option.rollbackIfError)
+      await connection.rollback();
     if (isDbError(e)) {
-      if (option?.printSqlError) {
+      if (option.printSqlError) {
         console.error("sql: ", e.sql);
-        console.error("sqlMessage: ",e.sqlMessage);
-        console.error("sqlState: ",e.sqlState);
-        console.error("errno: ",e.errno);
-        console.error("code: ",e.code);
+        console.error("sqlMessage: ", e.sqlMessage);
+        console.error("sqlState: ", e.sqlState);
+        console.error("errno: ", e.errno);
+        console.error("code: ", e.code);
       }
       if (option?.throwError) throw new DbError(e);
       else return null;
