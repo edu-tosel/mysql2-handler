@@ -108,8 +108,8 @@ export function crudPackage<
   O extends { [k in K]: R[C] }, // Object type
   R extends { [c in C]: unknown }, // RowDataPacket type
   AS extends string = never, // Auto set key string type
-  K extends string = keyof O & string, // Key string type
-  C extends string = keyof R & string // Column string type
+  K extends keyof O = keyof O , // Key string type
+  C extends keyof R = keyof R  // Column string type
 >(
   keys: ReadonlyArray<K>,
   columns: ReadonlyArray<C>,
