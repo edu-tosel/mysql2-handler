@@ -222,9 +222,32 @@ export function crudPackage<
         [[value]]
       );
 
-      printQueryIfNeeded(connection.format(queryString.insert, [[value]]));
-      return result;
-    });
+        printQueryIfNeeded(connection.format(queryString.insert, [[value]]));
+        return result;
+      },
+      { useTransaction: false }
+    );
+    const saveMany = async (setterObjs: Setter[]) =>
+    handler(
+      async (connection) => {
+        setterObjs = setterObjs.map(removeUndefined);
+        const values = setterObjs.map((setterObj) =>
+          keys.map((key) => {
+            if (key in setterObj)
+              return setterObj[key as unknown as keyof typeof setterObj];
+            else return undefined;
+          })
+        );
+        const [result] = await connection.query<ResultSetHeader>(
+          queryString.insertMany,
+          [values]
+        );
+
+        printQueryIfNeeded(connection.format(queryString.insertMany, [values]));
+        return result;
+      },
+      { useTransaction: false }
+    );
 
   /**
    * Updates rows in the database based on the provided setter object and query.
@@ -322,6 +345,7 @@ export function crudPackage<
     find,
     findOne,
     save,
+    saveMany,
     update,
     _delete,
     delete: _delete,
