@@ -108,8 +108,8 @@ export function crudPackage<
   O extends { [k in K]: R[C] }, // Object type
   R extends { [c in C]: unknown }, // RowDataPacket type
   AS extends string = never, // Auto set key string type
-  K extends keyof O = keyof O , // Key string type
-  C extends keyof R = keyof R  // Column string type
+  K extends keyof O = keyof O, // Key string type
+  C extends keyof R = keyof R // Column string type
 >(
   keys: ReadonlyArray<K>,
   columns: ReadonlyArray<C>,
@@ -210,26 +210,37 @@ export function crudPackage<
    * @returns A promise that resolves to the result of the save operation.
    */
   const save = async (setterObj: Setter) =>
-    handler(async (connection) => {
-      setterObj = removeUndefined(setterObj);
-      const value = keys.map((key) => {
-        if (key in setterObj)
-          return setterObj[key as unknown as keyof typeof setterObj];
-        else return undefined;
-      });
-      const [result] = await connection.query<ResultSetHeader>(
-        queryString.insert,
-        [[value]]
-      );
+    handler(
+      async (connection) => {
+        setterObj = removeUndefined(setterObj);
+        const value = keys.map((key) => {
+          if (key in setterObj)
+            return setterObj[key as unknown as keyof typeof setterObj];
+          else return undefined;
+        });
+        const [result] = await connection.query<ResultSetHeader>(
+          queryString.insert,
+          [[value]]
+        );
 
         printQueryIfNeeded(connection.format(queryString.insert, [[value]]));
         return result;
       },
       { useTransaction: false }
     );
-    const saveMany = async (setterObjs: Setter[]) =>
+  const saveMany = async (setterObjs: Setter[]) =>
     handler(
-      async (connection) => {
+      async (connection): Promise<ResultSetHeader> => {
+        if (setterObjs.length === 0)
+          return {
+            affectedRows: 0,
+            insertId: 0,
+            info: "",
+            fieldCount: 0,
+            serverStatus: 0,
+            warningStatus: 0,
+            changedRows: 0,
+          } as ResultSetHeader;
         setterObjs = setterObjs.map(removeUndefined);
         const values = setterObjs.map((setterObj) =>
           keys.map((key) => {
