@@ -281,14 +281,19 @@ export function crudPackage<
       setterObj = removeUndefined(setterObj);
       query = removeUndefined(query);
       const row = toPartialRow(setterObj as Partial<O>);
-      if (Object.keys(row).length === 0) {
+      if (Object.keys(query).length === 0) {
         if (option?.allowAffectAll) {
           const [result] = await connection.query<ResultSetHeader>(
             queryString.updateAll
           );
           printQueryIfNeeded(queryString.updateAll);
           return result;
-        } else throw new Error("setterObj is empty");
+        } else
+          throw new Error(
+            "Query is empty and allowAffectAll is false, " +
+              "to update all rows, " +
+              "set allowAffectAll to true"
+          );
       } else {
         const condition = getCondition(query);
         const [result] = await connection.query<ResultSetHeader>(
