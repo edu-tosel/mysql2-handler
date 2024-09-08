@@ -1,6 +1,7 @@
 import { DbError, PoolError, isDbError } from "./dbError";
 import mysql2 from "mysql2/promise";
 import { transfers, crudPackage } from "./repository";
+import "dotenv/config";
 
 export type ResultSetHeader = mysql2.ResultSetHeader;
 export type RowDataPacket = mysql2.RowDataPacket;
@@ -17,7 +18,10 @@ const {
   DEBUG: debugString,
   CONNECTION_LIMIT: connectionLimitString,
   TIMEZONE: timezone,
+  CASTED_BOOLEAN: castedBooleanEnv,
 } = process.env;
+console.log(castedBooleanEnv);
+const castedBoolean = castedBooleanEnv ? castedBooleanEnv === "true" : false;
 const availableDateStrings = ["DATE", "DATETIME", "TIMESTAMP"] as const;
 const dateStrings: (typeof availableDateStrings)[number][] = dateStringsString
   ? dateStringsString
@@ -40,7 +44,12 @@ const poolOption = {
   connectionLimit,
   dateStrings,
   timezone: timezone ?? "Z",
-};
+  typeCast: function (field, next) {
+    if (field.type === "TINY" && field.length === 1 && castedBoolean)
+      return field.string() === "1"; // 1 = true, 0 = false
+    return next();
+  },
+} as mysql2.PoolOptions;
 const pool = mysql2.createPool(poolOption);
 
 type HandlerOption = {
