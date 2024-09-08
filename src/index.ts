@@ -1,7 +1,6 @@
 import { DbError, PoolError, isDbError } from "./dbError";
 import mysql2 from "mysql2/promise";
 import { transfers, crudPackage } from "./repository";
-import "dotenv/config";
 
 export type ResultSetHeader = mysql2.ResultSetHeader;
 export type RowDataPacket = mysql2.RowDataPacket;
@@ -20,7 +19,6 @@ const {
   TIMEZONE: timezone,
   CASTED_BOOLEAN: castedBooleanEnv,
 } = process.env;
-console.log(castedBooleanEnv);
 const castedBoolean = castedBooleanEnv ? castedBooleanEnv === "true" : false;
 const availableDateStrings = ["DATE", "DATETIME", "TIMESTAMP"] as const;
 const dateStrings: (typeof availableDateStrings)[number][] = dateStringsString
