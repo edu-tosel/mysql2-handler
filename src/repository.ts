@@ -522,3 +522,10 @@ export function crudPackage(a: any, b?: any, c?: any) {
   }
   throw new Error("Invalid arguments");
 }
+export function rawConverter<T, U>(fromRaw: (raw: T) => U) {
+  const fromRaws = (raws: T[]) => raws.map(fromRaw);
+  const fromRawOrUndefined = (raw: T | undefined) =>
+    raw ? fromRaw(raw) : undefined;
+  const fromRawOrNull = (raw: T | null) => (raw ? fromRaw(raw) : null);
+  return { fromRaw, fromRaws, fromRawOrUndefined, fromRawOrNull };
+}

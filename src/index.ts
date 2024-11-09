@@ -1,6 +1,6 @@
 import { DbError, PoolError, isDbError } from "./dbError";
 import mysql2 from "mysql2/promise";
-import { transfers, crudPackage } from "./repository";
+import { transfers, crudPackage, rawConverter } from "./repository";
 
 export type ResultSetHeader = mysql2.ResultSetHeader;
 export type RowDataPacket = mysql2.RowDataPacket;
