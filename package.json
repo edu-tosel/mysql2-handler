@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/edu-tosel/mysql2-handler#readme",
   "dependencies": {
-    "mysql2": "^3.7.0"
+    "mysql2": "^3.11.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.4",
