@@ -87,9 +87,35 @@ interface CrudPackage<
   K extends keyof O = keyof O, // Key string type
   C extends keyof R = keyof R // Column string type
 > {
+  /**
+   * Find rows
+   * @example
+   * ``` ts
+   * const userFirstAndSecond = await find({id: [1, 2]});
+   * const userOfSeoul = await find({addr1: "%서울%"});
+   * const userOfAddressNull = await find({addr1: "null"});
+   * const userOfAddressNotNull = await find({addr1: "not null"});
+   * ```
+   * @param query Query object
+   */
   find: (query?: {
     [k in K]?: CompareValue<O[k]>;
   }) => Promise<O[]>;
+  /**
+   * Find one row
+   * @example
+   * ``` ts
+   * const user0 = await findOne({id: 1});
+   * type User0 = typeof userOne; // Promise<User | undefined>
+   * const user1 = await findOne({id: 1}, {throwError: true});
+   * type User1 = typeof userOne; // Promise<User>
+   * const user2 = await findOne({id: 1}, {throwError: false});
+   * type User2 = typeof userOne; // Promise<User | undefined>
+   * ```
+   * @param query Query object
+   * @param option Option object
+   * @param option.throwError If set to true, throw an error if not found
+   */
   findOne: {
     (
       query: { [k in K]?: CompareValue<O[k]> },
@@ -101,17 +127,55 @@ interface CrudPackage<
     ): Promise<O | undefined>;
     (query: { [k in K]?: CompareValue<O[k]> }): Promise<O | undefined>;
   };
+  /**
+   * Saves the provided setter object to the database.
+   *
+   * @param setterObj - The setter object containing the data to be saved.
+   * @returns A promise that resolves to the result of the save operation.
+   */
   save: (setterObj: Omit<O, AS>) => Promise<ResultSetHeader>;
+  /**
+   * Saves the provided setter objects to the database.
+   *
+   * @param setterObjs - An array of setter objects containing the data to be saved.
+   * @returns A promise that resolves to the result of the save operation.
+   */
   saveMany: (setterObjs: Omit<O, AS>[]) => Promise<ResultSetHeader>;
+  /**
+   * Updates rows in the database based on the provided setter object and query.
+   *
+   * @param setterObj - The partial object containing the values to be updated.
+   * @param query - The query object specifying the conditions for the update.
+   * @param option - Optional configuration for the update operation.
+   * @param option.allowAffectAll - If set to true, allows updating all rows when the setter object is empty.
+   *
+   * @returns A promise that resolves to the result of the update operation.
+   *
+   * @throws An error if the setterObj is empty and option.allowAffectAll is not set to true.
+   */
   update: (
     setterObj: Partial<O>,
     query: { [k in K]?: CompareValue<O[k]> },
     option?: { allowAffectAll?: boolean }
   ) => Promise<ResultSetHeader>;
+  /**
+   * Deletes records from the database based on the provided query.
+   */
   _delete: (
     query: { [k in K]?: CompareValue<O[k]> },
     option?: { allowAffectAll?: boolean }
   ) => Promise<ResultSetHeader>;
+  /**
+   * Deletes records from the database based on the provided query.
+   *
+   * @param query - The query object specifying the records to delete.
+   * @param option - Optional configuration for the delete operation.
+   * @param option.allowAffectAll - If set to true, allows deleting all records when the query is empty.
+   *
+   * @returns A promise that resolves to the number of affected rows.
+   *
+   * @throws An error if the query is empty and option.allowAffectAll is not set to true.
+   */
   delete: (
     query: { [k in K]?: CompareValue<O[k]> },
     option?: { allowAffectAll?: boolean }
@@ -197,17 +261,6 @@ export function _crudPackage<
     if (printQuery) return console.log(query);
     else return;
   }
-  /**
-   * Find rows
-   * @example
-   * ``` ts
-   * const userFirstAndSecond = await find({id: [1, 2]});
-   * const userOfSeoul = await find({addr1: "%서울%"});
-   * const userOfAddressNull = await find({addr1: "null"});
-   * const userOfAddressNotNull = await find({addr1: "not null"});
-   * ```
-   * @param query Query object
-   */
   const find = async (query?: Query) =>
     handler(async (connection) => {
       query = removeUndefined(query);
@@ -244,12 +297,6 @@ export function _crudPackage<
     else if (!throwError) return rows.at(0);
     else return rows[0];
   };
-  /**
-   * Saves the provided setter object to the database.
-   *
-   * @param setterObj - The setter object containing the data to be saved.
-   * @returns A promise that resolves to the result of the save operation.
-   */
   const save = async (setterObj: Setter) =>
     handler(
       async (connection) => {
@@ -301,18 +348,6 @@ export function _crudPackage<
       { useTransaction: false }
     );
 
-  /**
-   * Updates rows in the database based on the provided setter object and query.
-   *
-   * @param setterObj - The partial object containing the values to be updated.
-   * @param query - The query object specifying the conditions for the update.
-   * @param option - Optional configuration for the update operation.
-   * @param option.allowAffectAll - If set to true, allows updating all rows when the setter object is empty.
-   *
-   * @returns A promise that resolves to the result of the update operation.
-   *
-   * @throws An error if the setterObj is empty and option.allowAffectAll is not set to true.
-   */
   const update = async (
     setterObj: Partial<Setter>,
     query: Query,
@@ -347,14 +382,6 @@ export function _crudPackage<
         return result;
       }
     });
-  /**
-   * Deletes records from the database based on the provided query.
-   * @param query - The query object specifying the records to delete.
-   * @param option - An optional object with additional options.
-   * @param option.allowAffectAll - If set to true, allows deleting all records when the query is empty.
-   * @returns A promise that resolves to the number of affected rows.
-   * @throws An error if the query is empty and `option.allowAffectAll` is not set to true.
-   */
   const _delete = async (query: Query, option?: { allowAffectAll?: boolean }) =>
     handler(async (connection) => {
       query = removeUndefined(query);
