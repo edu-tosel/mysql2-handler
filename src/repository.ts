@@ -371,6 +371,9 @@ export function crudPackage<
   };
 }
 const identityFunction = <T>(value: T) => value;
+/**
+ * @deprecated Use `crudPackage` instead
+ */
 export const tablePackage = <
   T extends RowDataPacket,
   C extends string = keyof T & string
