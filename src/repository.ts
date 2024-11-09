@@ -71,6 +71,56 @@ export function transfers<
   };
   return { toObject, toRow, toPartialRow };
 }
+
+type CompareValue<T = unknown> =
+  | NonNullable<T>
+  | NonNullable<T>[]
+  | "null"
+  | "not null"
+  | `%${string}%`
+  | `%${string}`
+  | `${string}%`;
+interface CrudPackage<
+  O extends { [k in K]: R[C] }, // Object type
+  R extends { [c in C]: unknown }, // RowDataPacket type
+  AS extends string = never, // Auto set key string type
+  K extends keyof O = keyof O, // Key string type
+  C extends keyof R = keyof R // Column string type
+> {
+  find: (query?: {
+    [k in K]?: CompareValue<O[k]>;
+  }) => Promise<O[]>;
+  findOne: {
+    (
+      query: { [k in K]?: CompareValue<O[k]> },
+      { throwError }: { throwError: true }
+    ): Promise<O>;
+    (
+      query: { [k in K]?: CompareValue<O[k]> },
+      { throwError }: { throwError?: false }
+    ): Promise<O | undefined>;
+    (query: { [k in K]?: CompareValue<O[k]> }): Promise<O | undefined>;
+  };
+  save: (setterObj: Omit<O, AS>) => Promise<ResultSetHeader>;
+  saveMany: (setterObjs: Omit<O, AS>[]) => Promise<ResultSetHeader>;
+  update: (
+    setterObj: Partial<O>,
+    query: { [k in K]?: CompareValue<O[k]> },
+    option?: { allowAffectAll?: boolean }
+  ) => Promise<ResultSetHeader>;
+  _delete: (
+    query: { [k in K]?: CompareValue<O[k]> },
+    option?: { allowAffectAll?: boolean }
+  ) => Promise<ResultSetHeader>;
+  delete: (
+    query: { [k in K]?: CompareValue<O[k]> },
+    option?: { allowAffectAll?: boolean }
+  ) => Promise<ResultSetHeader>;
+  handler: typeof handler;
+  toObject: (row: R) => O;
+  toRow: (obj: O) => R;
+  toPartialRow: (obj: Partial<O>) => Partial<R>;
+}
 /**
  * Create CRUD functions and handler and transfer functions.
  * @typeParam `O` Object type
@@ -104,7 +154,7 @@ export function transfers<
  * );
  * ```
  */
-export function crudPackage<
+export function _crudPackage<
   O extends { [k in K]: R[C] }, // Object type
   R extends { [c in C]: unknown }, // RowDataPacket type
   AS extends string = never, // Auto set key string type
@@ -123,19 +173,11 @@ export function crudPackage<
     };
     autoSetColumns?: AS[];
   }
-) {
+): CrudPackage<O, R, AS, K, C> {
   const printQuery = option.printQuery === true;
   const table = option.table;
   const { toObject, toPartialRow, toRow } =
     option.transfers || transfers<O, R, K, C>(keys, columns);
-  type CompareValue<T = unknown> =
-    | NonNullable<T>
-    | NonNullable<T>[]
-    | "null"
-    | "not null"
-    | `%${string}%`
-    | `%${string}`
-    | `${string}%`;
   type Query = {
     [k in K]?: CompareValue<O[k]>;
   };
@@ -386,7 +428,7 @@ export const tablePackage = <
   columns: ReadonlyArray<C> | C[];
   printQuery?: boolean;
 }) =>
-  crudPackage<T, T>(columns, columns, {
+  _crudPackage<T, T>(columns, columns, {
     table: tableName,
     printQuery,
     transfers: {
@@ -395,3 +437,61 @@ export const tablePackage = <
       toPartialRow: identityFunction,
     },
   });
+
+const isArray = Array.isArray;
+const isString = (value: unknown) => typeof value === "string";
+const isBooleanOrUndefined = (value: unknown) =>
+  value === undefined || typeof value === "boolean";
+export function crudPackage<
+  O extends { [k in K]: R[C] }, // Object type
+  R extends { [c in C]: unknown }, // RowDataPacket type
+  AS extends string = never, // Auto set key string type
+  K extends keyof O = keyof O, // Key string type
+  C extends keyof R = keyof R // Column string type
+>(
+  keys: ReadonlyArray<K>,
+  columns: ReadonlyArray<C>,
+  option: {
+    table: string;
+    printQuery?: boolean;
+    transfers?: {
+      toObject: (row: R) => O;
+      toRow: (obj: O) => R;
+      toPartialRow: (obj: Partial<O>) => Partial<R>;
+    };
+    autoSetColumns?: AS[];
+  }
+): CrudPackage<O, R, AS, K, C>;
+export function crudPackage<
+  O extends { [k in K]: R[C] }, // Object type
+  R extends { [c in C]: unknown }, // RowDataPacket type
+  AS extends keyof O & string = never, // Auto set key string type
+  K extends keyof O = keyof O, // Key string type
+  C extends keyof R = keyof R // Column string type
+>({
+  columns,
+  keys,
+  table,
+  printQuery,
+}: {
+  keys: ReadonlyArray<K>;
+  columns: ReadonlyArray<C>;
+  table: string;
+  printQuery?: boolean;
+}): CrudPackage<O, R, AS, K, C>;
+export function crudPackage(a: any, b?: any, c?: any) {
+  if (Array.isArray(a) && Array.isArray(b) && typeof c === "object")
+    return _crudPackage(a as any, b as any, c);
+  if (typeof a === "object") {
+    const { keys, columns, table, printQuery } = a;
+    if (
+      !isArray(keys) ||
+      !isArray(columns) ||
+      !isString(table) ||
+      !isBooleanOrUndefined(printQuery)
+    )
+      throw new Error("Invalid arguments");
+    return _crudPackage(keys as any, columns as any, { table, printQuery });
+  }
+  throw new Error("Invalid arguments");
+}
