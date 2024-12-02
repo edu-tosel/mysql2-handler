@@ -1,6 +1,6 @@
 import { DbError, PoolError, isDbError } from "./dbError";
 import mysql2 from "mysql2/promise";
-import { transfers, crudPackage, rawConverter } from "./repository";
+import { transfers, crudPackage } from "./repository";
 
 export type ResultSetHeader = mysql2.ResultSetHeader;
 export type RowDataPacket = mysql2.RowDataPacket;
@@ -45,6 +45,13 @@ const poolOption = {
   typeCast: function (field, next) {
     if (field.type === "TINY" && field.length === 1 && castedBoolean)
       return field.string() === "1"; // 1 = true, 0 = false
+    if (field.type === "TIMESTAMP") {
+      const value = field.string();
+      const zero = "1970-01-01 00:00:00";
+      if (value === "0000-00-00 00:00:00")
+        return new Date(zero); // 0000-00-00 00:00:00 = 1970-01-01 00:00:00
+      else return new Date(value ?? zero);
+    }
     return next();
   },
 } as mysql2.PoolOptions;
