@@ -1,6 +1,6 @@
 {
   "name": "@edu-tosel/mysql2-handler",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Make using mysql simpler with callback function, try...catch, more error objects",
   "scripts": {
     "build": "tsc -p tsconfig.build.json --noEmit false",
