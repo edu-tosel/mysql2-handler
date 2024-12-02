@@ -45,11 +45,6 @@ const poolOption = {
   typeCast: function (field, next) {
     if (field.type === "TINY" && field.length === 1 && castedBoolean)
       return field.string() === "1"; // 1 = true, 0 = false
-    if (field.type === "TIMESTAMP") {
-      const value = field.string();
-      if (value === "0000-00-00 00:00:00") return new Date(0);
-      else return next();
-    }
     return next();
   },
 } as mysql2.PoolOptions;
