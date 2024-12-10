@@ -472,6 +472,23 @@ const isBooleanOrUndefined = (value: unknown) =>
 export function crudPackage<
   O extends { [k in K]: R[C] }, // Object type
   R extends { [c in C]: unknown }, // RowDataPacket type
+  AS extends keyof O & string = never, // Auto set key string type
+  K extends keyof O = keyof O, // Key string type
+  C extends keyof R = keyof R // Column string type
+>({
+  columns,
+  keys,
+  table,
+  printQuery,
+}: {
+  keys: ReadonlyArray<K>;
+  columns: ReadonlyArray<C>;
+  table: string;
+  printQuery?: boolean;
+}): CrudPackage<O, R, AS, K, C>;
+export function crudPackage<
+  O extends { [k in K]: R[C] }, // Object type
+  R extends { [c in C]: unknown }, // RowDataPacket type
   AS extends string = never, // Auto set key string type
   K extends keyof O = keyof O, // Key string type
   C extends keyof R = keyof R // Column string type
@@ -489,23 +506,6 @@ export function crudPackage<
     autoSetColumns?: AS[];
   }
 ): CrudPackage<O, R, AS, K, C>;
-export function crudPackage<
-  O extends { [k in K]: R[C] }, // Object type
-  R extends { [c in C]: unknown }, // RowDataPacket type
-  AS extends keyof O & string = never, // Auto set key string type
-  K extends keyof O = keyof O, // Key string type
-  C extends keyof R = keyof R // Column string type
->({
-  columns,
-  keys,
-  table,
-  printQuery,
-}: {
-  keys: ReadonlyArray<K>;
-  columns: ReadonlyArray<C>;
-  table: string;
-  printQuery?: boolean;
-}): CrudPackage<O, R, AS, K, C>;
 export function crudPackage(a: any, b?: any, c?: any) {
   if (Array.isArray(a) && Array.isArray(b) && typeof c === "object")
     return _crudPackage(a as any, b as any, c);
