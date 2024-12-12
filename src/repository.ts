@@ -1,5 +1,12 @@
-import { ResultSetHeader, RowDataPacket, format, handler } from ".";
-import { removeUndefined } from "./utils";
+import { type ResultSetHeader, type RowDataPacket, format, handler } from ".";
+import {
+  convertToSnakeStrings,
+  isArray,
+  isBooleanOrUndefined,
+  isOptionalArray,
+  isString,
+  removeUndefined,
+} from "./utils";
 /**
  * Transfer object to row and row to object
  * @typeParam `O` Object type
@@ -464,25 +471,6 @@ export const tablePackage = <
       toPartialRow: identityFunction,
     },
   });
-
-const isArray = Array.isArray;
-const isOptionalArray = (value: unknown) =>
-  typeof value === "undefined" || isArray(value);
-const isString = (value: unknown) => typeof value === "string";
-const isBooleanOrUndefined = (value: unknown) =>
-  value === undefined || typeof value === "boolean";
-type ToSnakeCase<S extends string> = S extends `${infer First}${infer Rest}`
-  ? Rest extends Uncapitalize<Rest>
-    ? `${Lowercase<First>}${ToSnakeCase<Rest>}`
-    : `${Lowercase<First>}_${ToSnakeCase<Rest>}`
-  : S;
-type ConvertToSnakeCase<T> = {
-  [K in keyof T as ToSnakeCase<Extract<K, string>>]: T[K];
-};
-const convertToSnakeString = <T extends string>(input: T) =>
-  input.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase() as ToSnakeCase<T>;
-const convertToSnakeStrings = <T extends string>(strings: T[]) =>
-  strings.map(convertToSnakeString);
 
 export function crudPackage<
   O extends { [k in K]: any }, // Object type
