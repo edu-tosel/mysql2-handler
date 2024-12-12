@@ -466,9 +466,37 @@ export const tablePackage = <
   });
 
 const isArray = Array.isArray;
+const isOptionalArray = (value: unknown) =>
+  typeof value === "undefined" || isArray(value);
 const isString = (value: unknown) => typeof value === "string";
 const isBooleanOrUndefined = (value: unknown) =>
   value === undefined || typeof value === "boolean";
+type ToSnakeCase<S extends string> = S extends `${infer First}${infer Rest}`
+  ? Rest extends Uncapitalize<Rest>
+    ? `${Lowercase<First>}${ToSnakeCase<Rest>}`
+    : `${Lowercase<First>}_${ToSnakeCase<Rest>}`
+  : S;
+type ConvertToSnakeCase<T> = {
+  [K in keyof T as ToSnakeCase<Extract<K, string>>]: T[K];
+};
+const convertToSnakeString = <T extends string>(input: T) =>
+  input.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase() as ToSnakeCase<T>;
+const convertToSnakeStrings = <T extends string>(strings: T[]) =>
+  strings.map(convertToSnakeString);
+
+export function crudPackage<
+  O extends { [k in K]: any }, // Object type
+  AS extends keyof O & string = never, // Auto set key string type
+  K extends keyof O = keyof O // Key string type
+>({
+  keys,
+  table,
+  printQuery,
+}: {
+  keys: ReadonlyArray<K>;
+  table: string;
+  printQuery?: boolean;
+}): CrudPackage<O, any, AS, K, any>;
 export function crudPackage<
   O extends { [k in K]: R[C] }, // Object type
   R extends { [c in C]: unknown }, // RowDataPacket type
@@ -513,12 +541,14 @@ export function crudPackage(a: any, b?: any, c?: any) {
     const { keys, columns, table, printQuery } = a;
     if (
       !isArray(keys) ||
-      !isArray(columns) ||
+      !isOptionalArray(columns) ||
       !isString(table) ||
       !isBooleanOrUndefined(printQuery)
     )
       throw new Error("Invalid arguments");
-    return _crudPackage(keys as any, columns as any, { table, printQuery });
+    const newColumns = columns ?? convertToSnakeStrings(keys);
+    console.log({ keys, newColumns, table, printQuery });
+    return _crudPackage(keys as any, newColumns as any, { table, printQuery });
   }
   throw new Error("Invalid arguments");
 }
