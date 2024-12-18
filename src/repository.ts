@@ -7,6 +7,14 @@ import {
   isString,
   removeUndefined,
 } from "./utils";
+
+const log = (message: string) =>
+  console.log(`[Mysql2 Handler; Repository] ${message}`);
+const warn = (message: string) =>
+  console.log(`Warning: [Mysql2 Handler; Repository] ${message}`);
+const error = (message: string) =>
+  console.error(`Error: [Mysql2 Handler; Repository] ${message}`);
+
 /**
  * Transfer object to row and row to object
  * @typeParam `O` Object type
@@ -472,6 +480,38 @@ export const tablePackage = <
     },
   });
 
+const codes = ["ER_BAD_FIELD_ERROR", "ER_NO_SUCH_TABLE", "ER_PARSE_ERROR"];
+
+const checkValid = ({
+  columns,
+  table,
+  validateCheck,
+}: {
+  columns: string[];
+  table: string;
+  validateCheck?: boolean;
+}) =>
+  handler(async (connection) => {
+    try {
+      await connection.query(
+        format("SELECT ?? FROM ?? LIMIT 1;", [columns, table])
+      );
+      return;
+    } catch (e) {
+      const { message, code, errno, sql, sqlState, sqlMessage } = e as any;
+      log(`"${table}" is not valid table or view`);
+      if (!validateCheck) {
+        warn(message);
+        warn(code);
+        return;
+      } else {
+        error(message);
+        error(code);
+        throw e;
+      }
+    }
+  });
+
 export function crudPackage<
   O extends { [k in K]: any }, // Object type
   AS extends keyof O & string = never, // Auto set key string type
@@ -480,10 +520,12 @@ export function crudPackage<
   keys,
   table,
   printQuery,
+  validateCheck,
 }: {
   keys: ReadonlyArray<K>;
   table: string;
   printQuery?: boolean;
+  validateCheck?: boolean;
 }): CrudPackage<O, any, AS, K, any>;
 export function crudPackage<
   O extends { [k in K]: R[C] }, // Object type
@@ -496,11 +538,13 @@ export function crudPackage<
   keys,
   table,
   printQuery,
+  validateCheck,
 }: {
   keys: ReadonlyArray<K>;
   columns: ReadonlyArray<C>;
   table: string;
   printQuery?: boolean;
+  validateCheck?: boolean;
 }): CrudPackage<O, R, AS, K, C>;
 export function crudPackage<
   O extends { [k in K]: R[C] }, // Object type
@@ -526,16 +570,21 @@ export function crudPackage(a: any, b?: any, c?: any) {
   if (Array.isArray(a) && Array.isArray(b) && typeof c === "object")
     return _crudPackage(a as any, b as any, c);
   if (typeof a === "object") {
-    const { keys, columns, table, printQuery } = a;
+    const { keys, columns, table, printQuery, validateCheck } = a;
     if (
       !isArray(keys) ||
       !isOptionalArray(columns) ||
       !isString(table) ||
-      !isBooleanOrUndefined(printQuery)
+      !isBooleanOrUndefined(printQuery) ||
+      !isBooleanOrUndefined(validateCheck)
     )
       throw new Error("Invalid arguments");
     const newColumns = columns ?? convertToSnakeStrings(keys);
-    console.log({ keys, newColumns, table, printQuery });
+    checkValid({
+      columns: newColumns,
+      table,
+      validateCheck,
+    });
     return _crudPackage(keys as any, newColumns as any, { table, printQuery });
   }
   throw new Error("Invalid arguments");
