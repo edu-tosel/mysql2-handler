@@ -132,3 +132,6 @@ dist
 # test code
 test.*
 **/test.*
+
+# VS Code
+.vscode
