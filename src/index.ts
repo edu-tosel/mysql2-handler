@@ -47,6 +47,7 @@ const poolOption = {
       return field.string() === "1"; // 1 = true, 0 = false
     if (field.type === "TIMESTAMP") {
       const value = field.string();
+      if (value === null) return null;
       const zero = "1970-01-01 00:00:00";
       if (value === "0000-00-00 00:00:00")
         return new Date(zero); // 0000-00-00 00:00:00 = 1970-01-01 00:00:00
