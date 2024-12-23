@@ -28,7 +28,7 @@ const {
   DB_USER: user,
   DB_PASSWORD: password,
   DB_NAME: database,
-  DB_PORT: port,
+  DB_PORT: dbPort,
   DATE_STRINGS: dateStringsString,
   DEBUG: debugString,
   CONNECTION_LIMIT: connectionLimitString,
@@ -48,12 +48,14 @@ const dateStrings: (typeof availableDateStrings)[number][] = dateStringsString
   : ["DATE"];
 const debug = debugString ? debugString === "true" : false;
 const connectionLimit = parseInt(connectionLimitString || "5");
+const dbPortNumber = parseInt(dbPort ?? "3306");
+const port = Number.isNaN(dbPortNumber) ? 3306 : dbPortNumber;
 const poolOption = {
   host,
   user,
   password,
   database,
-  port: port ? parseInt(port) : 3306,
+  port,
   debug,
   connectionLimit,
   dateStrings,
