@@ -7,6 +7,22 @@ export type RowDataPacket = mysql2.RowDataPacket;
 export const format = mysql2.format;
 export { transfers, crudPackage };
 
+const log = (massage: string) => console.log(`[Mysql2 Handler] ${massage}`);
+
+const readBooleanEnv = (
+  record: Record<string, string | undefined>,
+  defaultValue?: boolean
+) => {
+  const [[key, value]] = Object.entries(record);
+  if (value === undefined) return defaultValue;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  log(
+    `Invalid value for ${key}: ${value}; Using default value: ${defaultValue}`
+  );
+  return defaultValue;
+};
+
 const {
   DB_HOST: host,
   DB_USER: user,
@@ -17,9 +33,9 @@ const {
   DEBUG: debugString,
   CONNECTION_LIMIT: connectionLimitString,
   TIMEZONE: timezone,
-  CASTED_BOOLEAN: castedBooleanEnv,
+  CASTED_BOOLEAN,
 } = process.env;
-const castedBoolean = castedBooleanEnv ? castedBooleanEnv === "true" : false;
+const castedBoolean = readBooleanEnv({ CASTED_BOOLEAN });
 const availableDateStrings = ["DATE", "DATETIME", "TIMESTAMP"] as const;
 const dateStrings: (typeof availableDateStrings)[number][] = dateStringsString
   ? dateStringsString
@@ -47,11 +63,12 @@ const poolOption = {
       return field.string() === "1"; // 1 = true, 0 = false
     if (field.type === "TIMESTAMP") {
       const value = field.string();
+      if (dateStrings.includes("TIMESTAMP")) return value;
       if (value === null) return null;
-      const zero = "1970-01-01 00:00:00";
       if (value === "0000-00-00 00:00:00")
-        return new Date(zero); // 0000-00-00 00:00:00 = 1970-01-01 00:00:00
-      else return new Date(value ?? zero);
+        return new Date("1970-01-01 00:00:00");
+      // 0000-00-00 00:00:00 = 1970-01-01 00:00:00
+      else return new Date(value);
     }
     return next();
   },
