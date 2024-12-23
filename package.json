@@ -6,6 +6,7 @@
     "build": "tsc -p tsconfig.build.json --noEmit false",
     "build-publish": "npm run build && node setupPackage.js && cd dist && npm publish",
     "upload": "npm run build && npm version patch && node setupPackage.js && cd dist && npm publish && git push && git push --tags",
+    "upload:minor": "npm run build && npm version minor && node setupPackage.js && cd dist && npm publish && git push && git push --tags",
     "test": "ts-node src/test.ts"
   },
   "repository": {
@@ -25,7 +26,7 @@
   },
   "homepage": "https://github.com/edu-tosel/mysql2-handler#readme",
   "dependencies": {
-    "mysql2": "^3.11.4"
+    "mysql2": "^3.11.5"
   },
   "devDependencies": {
     "@types/node": "^20.11.4",
