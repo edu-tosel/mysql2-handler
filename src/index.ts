@@ -68,9 +68,9 @@ const poolOption = {
       if (dateStrings.includes("TIMESTAMP")) return value;
       if (value === null) return null;
       if (value === "0000-00-00 00:00:00")
-        return new Date("1970-01-01 00:00:00");
-      // 0000-00-00 00:00:00 = 1970-01-01 00:00:00
-      else return new Date(value);
+        return new Date("1970-01-01 00:00:00Z");
+      // 0000-00-00 00:00:00 = 1970-01-01 00:00:00 UTC
+      else return new Date(`${value}Z`);
     }
     return next();
   },
